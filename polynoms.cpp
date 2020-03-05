@@ -6,6 +6,17 @@ class Polynomial {
 private:
     std::vector<T> degrees;
 
+    static void null_res(std::vector<T>& deg) {
+        size_t counter = 0;
+        for (auto it = --deg.end(); it != deg.begin(); --it) {
+            if (it != static_cast<T>(0)) {
+                break;
+            }
+            ++counter;
+        }
+        deg.resize(deg.size() - counter);
+    }
+
 public:
     Polynomial() {}
 
@@ -51,6 +62,7 @@ public:
                 new_p[i + j] += p1.degrees[i] * p2.degrees[j];
             }
         }
+        null_res(new_p);
         return Polynomial(new_p);
     }
 
@@ -60,12 +72,14 @@ public:
             for (size_t i = 0; i < p1.degrees.size(); ++i) {
                 new_p[i] += p1.degrees[i];
             }
+            null_res(new_p);
             return Polynomial(new_p);
         } else if (p1.degrees.size() > p2.degrees.size()) {
             std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
             for (size_t i = 0; i < p2.degrees.size(); ++i) {
                 new_p[i] += p2.degrees[i];
             }
+            null_res(new_p);
             return Polynomial(new_p);
         } else {
             std::vector<T> new_p;
@@ -73,6 +87,7 @@ public:
             for (size_t i = 0; i < p2.degrees.size(); ++i) {
                 new_p[i] += p2.degrees[i] + p1.degrees[i];
             }
+            null_res(new_p);
             return Polynomial(new_p);
         }
     }
@@ -83,43 +98,66 @@ public:
             for (size_t i = 0; i < p1.degrees.size(); ++i) {
                 new_p[i] -= p1.degrees[i];
             }
+            null_res(new_p);
             return Polynomial(new_p);
         } else if (p1.degrees.size() > p2.degrees.size()) {
             std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
             for (size_t i = 0; i < p2.degrees.size(); ++i) {
                 new_p[i] -= p2.degrees[i];
             }
+            null_res(new_p);
             return Polynomial(new_p);
         } else {
             std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
             for (size_t i = 0; i < p2.degrees.size(); ++i) {
                 new_p[i] -= p2.degrees[i];
             }
+            null_res(new_p);
             return Polynomial(new_p);
         }
     }
 
     Polynomial& operator *= (const Polynomial& p2) {
         Polynomial new_p = *this * p2;
+        null_res(new_p);
         *this = new_p;
         return *this;
     }
 
     Polynomial& operator += (const Polynomial& p2) {
         Polynomial new_p = *this + p2;
+        null_res(new_p);
         *this = new_p;
         return *this;
     }
 
     Polynomial& operator -= (const Polynomial& p2) {
         Polynomial new_p = *this - p2;
+        null_res(new_p);
         *this = new_p;
         return *this;
     }
 
+    const size_t Degree() const {
+        if (degrees.empty()) {
+            return -1;
+        }
+        return degrees.size() - 1;
+    }
+
+    const T operator [] (const size_t i) const {
+        if (i >= degrees.size()) {
+            return 0;
+        } else {
+            return degrees[i];
+        }
+    }
+
     friend std::ostream& operator << (std::ostream& out, const Polynomial& p) {
         for (int i = p.degrees.size() - 1; i >= 0; --i) {
-            out << p.degrees[i] << "x^" << i << " + ";
+            if (p.degrees[i] != 0)
+                out << p.degrees[i] << "x^" << i << " + ";
+                out << p.degrees[i] << "x^" << i << " + ";
         }
         out << '\n';
         return out;
