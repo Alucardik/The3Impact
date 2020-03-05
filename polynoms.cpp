@@ -38,8 +38,8 @@ public:
     }
 
     friend Polynomial operator * (const Polynomial& p1, const Polynomial& p2) {
-        Polynomial new_p;
-        new_p.degrees.resize(p1.degrees.size() + p2.degrees.size() - 1);
+        std::vector<T> new_p;
+        new_p.resize(p1.degrees.size() + p2.degrees.size() - 1);
         for (size_t i = 0; i < p1.degrees.size(); ++i) {
             if (p1.degrees[i] == 0) {
                 continue;
@@ -48,33 +48,73 @@ public:
                 if (p2.degrees[j] == 0) {
                     continue;
                 }
-                new_p.degrees[i + j] += p1.degrees[i] * p2.degrees[j];
+                new_p[i + j] += p1.degrees[i] * p2.degrees[j];
             }
         }
-        return new_p;
+        return Polynomial(new_p);
     }
 
     friend Polynomial operator + (const Polynomial& p1, const Polynomial& p2) {
-        Polynomial new_p;
-        return new_p;
+        if (p1.degrees.size() < p2.degrees.size()) {
+            std::vector<T> new_p(p2.degrees.begin(), p2.degrees.end());
+            for (size_t i = 0; i < p1.degrees.size(); ++i) {
+                new_p[i] += p1.degrees[i];
+            }
+            return Polynomial(new_p);
+        } else if (p1.degrees.size() > p2.degrees.size()) {
+            std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
+            for (size_t i = 0; i < p2.degrees.size(); ++i) {
+                new_p[i] += p2.degrees[i];
+            }
+            return Polynomial(new_p);
+        } else {
+            std::vector<T> new_p;
+            new_p.resize(p1.degrees.size());
+            for (size_t i = 0; i < p2.degrees.size(); ++i) {
+                new_p[i] += p2.degrees[i] + p1.degrees[i];
+            }
+            return Polynomial(new_p);
+        }
     }
 
     friend Polynomial operator - (const Polynomial& p1, const Polynomial& p2) {
-        Polynomial new_p;
-        return new_p;
-
+        if (p1.degrees.size() < p2.degrees.size()) {
+            std::vector<T> new_p(p2.degrees.begin(), p2.degrees.end());
+            for (size_t i = 0; i < p1.degrees.size(); ++i) {
+                new_p[i] -= p1.degrees[i];
+            }
+            return Polynomial(new_p);
+        } else if (p1.degrees.size() > p2.degrees.size()) {
+            std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
+            for (size_t i = 0; i < p2.degrees.size(); ++i) {
+                new_p[i] -= p2.degrees[i];
+            }
+            return Polynomial(new_p);
+        } else {
+            std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
+            for (size_t i = 0; i < p2.degrees.size(); ++i) {
+                new_p[i] -= p2.degrees[i];
+            }
+            return Polynomial(new_p);
+        }
     }
 
-    friend Polynomial& operator *= (Polynomial& p1, const Polynomial& p2) {
-        return p1;
+    Polynomial& operator *= (const Polynomial& p2) {
+        Polynomial new_p = *this * p2;
+        *this = new_p;
+        return *this;
     }
 
-    friend Polynomial& operator += (Polynomial& p1, const Polynomial& p2) {
-        return p1;
+    Polynomial& operator += (const Polynomial& p2) {
+        Polynomial new_p = *this + p2;
+        *this = new_p;
+        return *this;
     }
 
-    friend Polynomial& operator -= (Polynomial& p1, const Polynomial& p2) {
-        return p1;
+    Polynomial& operator -= (const Polynomial& p2) {
+        Polynomial new_p = *this - p2;
+        *this = new_p;
+        return *this;
     }
 
     friend std::ostream& operator << (std::ostream& out, const Polynomial& p) {
@@ -87,9 +127,17 @@ public:
 };
 
 int main() {
-    std::vector<int> v = {5, 1, 2, 3}, v2 = {5, 6, 0, 8};
-    Polynomial p(v2);
-    Polynomial pr = Polynomial(v) * p;
-//    std::cout << ka << std::endl;
-    std::cout << pr;
+//    std::vector<int> v = {5, 1, 2, 3}, v2 = {5, 6, 0, 8};
+//    Polynomial p(v2);
+//    Polynomial pr(v);
+//    std::cout << pr * p << std::endl;
+//    pr *= p;
+//    std::cout << pr << std::endl;
+    std::vector<int> v1={0, 9, 2, -1, 1, 1, 2, 0, 0, 0}, v2={-1, 2, 1, 1, 0, 0, 2},
+            v3={1, 2, 3}, v4={2, 1}, v0={0,0,0,0,0,0,0}, v5={0, 0, 0, 0, -2};
+    Polynomial<int> p1(v1), p2(42), p3, p4(v2.begin()+2, v2.end()), p5(v3), p6(v4),
+            p7(v3.rbegin()+1, v3.rend()), p8(v1.begin(), v1.begin()+7), p0(v0), p10(v5);
+    std::cout << "p1: " << p1 << "p2: " << p2 << "p3: " << p3 << "p4: " << p4 << "p5: " << p5 << "p6: " << p6 << "p7: " << p7 << "p8: " << p8;
+    std::cout << "\nHUI!!!!\n";
+    std::cout << "p1 = 2x^6+x^5+x^4-x^3+2x^2+9x\np2 = 42\np3 = 0\np4 = 2x^4+x+1\np5 = 3x^2+2x+1\np6 = x+2\np7 = x+2\np8 = 2x^6+x^5+x^4-x^3+2x^2+9x\n\n";
 }
