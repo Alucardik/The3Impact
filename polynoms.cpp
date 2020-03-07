@@ -152,17 +152,68 @@ public:
 
     friend std::ostream& operator << (std::ostream& out, const Polynomial& p) {
         if (p.degrees.size() == 0) {
-            return out;
+            out << '0';
         } else if (p.degrees.size() == 1) {
             out << p.degrees[0];
-            return out;
-        } else {
-            for (int i = p.degrees.size() - 2; i >= 0; --i) {
-                if (p.degrees[i] != 0) {
-                    if (p.degrees[i] != static_cast<T>(1) && p.degrees[i] != static_cast<T>(-1)) {
-                        out << p.degrees[i];
-                    } else if (p.degrees[i] != static_cast<T>(-1)) {
-                        out << '-';
+        } else if (p.degrees.size() != 0) {
+            for (int i = static_cast<int>(p.degrees.size()) - 1; i >= 0; --i) {
+                if (p.degrees[i] != static_cast<T>(0)) {
+                    if (i == static_cast<int>(p.degrees.size()) - 1) {
+                        if (p.degrees[i] == static_cast<T>(1)) {
+                            if (i == 1) {
+                                out << "x";
+                            } else {
+                                out << "x^" << i;
+                            }
+                        } else if (p.degrees[i] == static_cast<T>(-1)) {
+                            if (i == 1) {
+                                out << "-x";
+                            } else {
+                                out << "-x^" << i;
+                            }
+                        } else {
+                            if (i == 1) {
+                                out << p.degrees[i] << "*x";
+                            } else {
+                                out << p.degrees[i] << "*x^" << i;
+                            }
+                        }
+                    } else {
+                        if (p.degrees[i] == static_cast<T>(1)) {
+                            if (i == 1) {
+                                out << "+x";
+                            } else if (i != 0) {
+                                out << "+x^" << i;
+                            } else {
+                                out << "+1";
+                            }
+                        } else if (p.degrees[i] == static_cast<T>(-1)) {
+                            if (i == 1) {
+                                out << "-x";
+                            } else if (i != 0) {
+                                out << "-x^" << i;
+                            } else {
+                                out << "-1";
+                            }
+                        } else {
+                            if (p.degrees[i] < static_cast<T>(0)) {
+                                if (i == 1) {
+                                    out << p.degrees[i] << "*x";
+                                } else if (i != 0) {
+                                    out << p.degrees[i] << "*x^" << i;
+                                } else {
+                                    out << p.degrees[i];
+                                }
+                            } else {
+                                if (i == 1) {
+                                    out << '+' << p.degrees[i] << "*x";
+                                } else if (i != 0) {
+                                    out << '+' << p.degrees[i] << "*x^" << i;
+                                } else {
+                                    out << '+' << p.degrees[i];
+                                }
+                            }
+                        }
                     }
                 }
             }
