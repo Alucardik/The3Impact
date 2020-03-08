@@ -38,18 +38,10 @@ public:
     }
 
     friend bool operator == (const Polynomial& p1, const Polynomial& p2) {
-        if (p1.degrees.size() < p2.degrees.size()) {
-            std::vector<T> c_copy = p1.degrees;
-            c_copy.resize(p2.degrees.size());
-            return c_copy == p2.degrees;
-
-        } else if (p1.degrees.size() > p2.degrees.size()) {
-            std::vector<T> c_copy = p2.degrees;
-            c_copy.resize(p1.degrees.size());
-            return c_copy == p1.degrees;
-        } else {
+        if (p1.degrees.size() == p2.degrees.size())
             return p1.degrees == p2.degrees;
-        }
+        else
+            return false;
     }
 
     friend bool operator != (const Polynomial& p1, const Polynomial& p2) {
@@ -119,6 +111,11 @@ public:
         return *this;
     }
 
+    Polynomial& operator = (const Polynomial& p2) {
+        degrees = p2.degrees;
+        return *this;
+    }
+
     size_t Degree() const {
         if (degrees.empty()) {
             return -1;
@@ -148,6 +145,63 @@ public:
 
     typename std::vector<T>::const_iterator end() const {
         return degrees.cend();
+    }
+
+    friend Polynomial operator / (const Polynomial& p1, const Polynomial& p2) {
+        if (p1.Degree() < p2.Degree()) {
+            return Polynomial();
+        } else {
+            Polynomial new_p(p1.degrees), left_over;
+            int gap = new_p.Degree() - p2.Degree();
+            T max_deg_p2 = p2.degrees[p2.Degree()];
+            while (gap >= 0 && !new_p.degrees.empty()) {
+                T new_deg = new_p.degrees[new_p.Degree()] / max_deg_p2;
+                std::vector<T> tmp_v(gap + 1);
+                tmp_v[gap] = new_deg;
+                left_over += Polynomial(tmp_v);
+                new_p -= Polynomial(tmp_v) * p2;
+                gap = new_p.Degree() - p2.Degree();
+            }
+            null_res(left_over.degrees);
+            return left_over;
+        }
+    }
+
+    friend Polynomial operator % (const Polynomial& p1, const Polynomial& p2) {
+        Polynomial ans_p = p1 - (p1 / p2) * p2;
+        null_res(ans_p.degrees);
+        return ans_p;
+    }
+
+    friend Polynomial operator , (const Polynomial& p1, const Polynomial& p2) {
+        if (static_cast<int>(p1.Degree()) == -1 || p1 == p2) {
+            return p2;
+        } else if (static_cast<int>(p2.Degree()) == -1) {
+            return p1;
+        } else {
+            Polynomial p1_c(p1.degrees), p2_c(p2.degrees), lag_d;
+            for (; !p2_c.degrees.empty(); ) {
+                lag_d = p1_c % p2_c;
+                p1_c = p2_c;
+                p2_c = lag_d;
+            }
+            p1_c = p1_c / p1_c.degrees[p1_c.Degree()];
+            null_res(p1_c.degrees);
+            return p1_c;
+        }
+    }
+
+    friend Polynomial operator & (const Polynomial& p1, const Polynomial& p2) {
+        Polynomial new_p;
+        for (size_t i = 0; i < p1.degrees.size(); ++i) {
+            Polynomial curr_p(1);
+            for (size_t j = 0; j < i; ++j) {
+                curr_p *= p2;
+            }
+            curr_p *= p1.degrees[i];
+            new_p += curr_p;
+        }
+        return new_p;
     }
 
     friend std::ostream& operator << (std::ostream& out, const Polynomial& p) {
