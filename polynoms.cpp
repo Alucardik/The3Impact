@@ -1,40 +1,48 @@
 #include <iostream>
+#include <map>
 #include <vector>
 
 template <typename T>
 class Polynomial {
 private:
-    std::vector<T> degrees;
-
-    static void null_res(std::vector<T>& deg) {
+    std::map<size_t, T> degrees;
+    static void null_res(std::map<size_t, T>& deg) {
         if (deg.empty()) {
             return;
         }
-        size_t counter = 0;
+        std::map<size_t, T> deg2;
         for (auto it = deg.rbegin(); it != deg.rend(); ++it) {
-            if (*it != static_cast<T>(0)) {
-                break;
+            if ((*it).second != static_cast<T>(0)) {
+                deg2.insert(*it);
             }
-            ++counter;
         }
-        deg.resize(deg.size() - counter);
+        deg = deg2;
     }
 
 public:
     Polynomial() = default;
 
-    Polynomial(const std::vector<T>& d) : degrees(d) {
-        null_res(degrees);
+    Polynomial(const std::vector<T>& d) {
+        for (size_t i = 0; i < d.size(); ++i) {
+            if (d[i] != static_cast<T>(0)) {
+                degrees.insert({i, d[i]});
+            }
+        }
     }
 
     Polynomial(const T& t) {
-        degrees.push_back(t);
-        null_res(degrees);
+        if (t != static_cast<T>(0))
+            degrees.insert({0, t});
     }
 
     template <typename Iter>
-    Polynomial(Iter beg, Iter end) : degrees(std::vector<T>(beg, end)) {
-        null_res(degrees);
+    Polynomial(Iter beg, Iter end) {
+        std::vector<T> d(beg, end);
+        for (size_t i = 0; i < d.size(); ++i) {
+            if (d[i] != static_cast<T>(0)) {
+                degrees.insert({i, d[i]});
+            }
+        }
     }
 
     friend bool operator == (const Polynomial& p1, const Polynomial& p2) {
@@ -49,101 +57,108 @@ public:
     }
 
     friend Polynomial operator * (const Polynomial& p1, const Polynomial& p2) {
-        std::vector<T> new_p;
-        new_p.resize(p1.degrees.size() + p2.degrees.size() - 1);
-        for (size_t i = 0; i < p1.degrees.size(); ++i) {
-            if (p1.degrees[i] == static_cast<T>(0)) {
-                continue;
-            }
-            for (size_t j = 0; j < p2.degrees.size(); ++j) {
-                if (p2.degrees[j] == static_cast<T>(0)) {
-                    continue;
+        if (p1.Degree() == -1 || p2.Degree() == -1) {
+            return Polynomial();
+        }
+        std::map<size_t, T> new_p;
+        for (const auto& [it1, elem1] : p1.degrees) {
+            for (const auto& [it2, elem2] : p2.degrees) {
+                if (new_p.find(it1 + it2) != new_p.end()) {
+                    new_p[it1 + it2] += elem1 * elem2;
+                } else {
+                    new_p.insert({it1 + it2, elem1 * elem2});
                 }
-                new_p[i + j] += p1.degrees[i] * p2.degrees[j];
             }
         }
         null_res(new_p);
-        return Polynomial(new_p);
+        Polynomial ans;
+        ans.degrees = new_p;
+        return ans;
     }
 
     friend Polynomial operator + (const Polynomial& p1, const Polynomial& p2) {
-        std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
-        if (p1.degrees.size() < p2.degrees.size()) {
-            new_p.resize(p2.degrees.size());
-        }
-        for (size_t i = 0; i < p2.degrees.size(); ++i) {
-            new_p[i] += p2.degrees[i];
+        std::map<size_t, T> new_p(p1.degrees.begin(), p1.degrees.end());
+        for (const auto& [it, elem] : p2.degrees) {
+            if (new_p.find(it) != new_p.end()) {
+                new_p[it] += elem;
+            } else {
+                new_p.insert({it, elem});
+            }
         }
         null_res(new_p);
-        return Polynomial(new_p);
+        Polynomial ans;
+        ans.degrees = new_p;
+        return ans;
     }
 
     friend Polynomial operator - (const Polynomial& p1, const Polynomial& p2) {
-        std::vector<T> new_p(p1.degrees.begin(), p1.degrees.end());
-        if (p1.degrees.size() < p2.degrees.size()) {
-            new_p.resize(p2.degrees.size());
+        if (p1 == p2) {
+            return Polynomial();
         }
-        for (size_t i = 0; i < p2.degrees.size(); ++i) {
-            new_p[i] -= p2.degrees[i];
+        std::map<size_t, T> new_p(p1.degrees.begin(), p1.degrees.end());
+        for (const auto& [it, elem] : p2.degrees) {
+            if (new_p.find(it) != new_p.end()) {
+                new_p[it] -= elem;
+            } else {
+                new_p.insert({it, -elem});
+            }
         }
         null_res(new_p);
-        return Polynomial(new_p);
+        Polynomial ans;
+        ans.degrees = new_p;
+        return ans;
     }
 
     Polynomial& operator *= (const Polynomial& p2) {
         Polynomial new_p = *this * p2;
-        null_res(new_p.degrees);
         *this = new_p;
         return *this;
     }
 
     Polynomial& operator += (const Polynomial& p2) {
         Polynomial new_p = *this + p2;
-        null_res(new_p.degrees);
         *this = new_p;
         return *this;
     }
 
     Polynomial& operator -= (const Polynomial& p2) {
         Polynomial new_p = *this - p2;
-        null_res(new_p.degrees);
         *this = new_p;
         return *this;
     }
 
-    Polynomial& operator = (const Polynomial& p2) {
-        degrees = p2.degrees;
-        return *this;
-    }
-
-    size_t Degree() const {
+    int Degree() const {
         if (degrees.empty()) {
             return -1;
         }
-        return degrees.size() - 1;
+        return (*(--degrees.end())).first;
     }
 
     T operator[] (const size_t i) const {
-        if (i >= degrees.size()) {
-            return 0;
+        if (degrees.find(i) != degrees.end()) {
+            return degrees.at(i);
         } else {
-            return degrees[i];
+            return 0;
         }
     }
 
     T operator() (const T& point) const {
-        T curr_pow = static_cast<T>(1), curr_sum = static_cast<T>(0);
-        for (size_t i = 0; i < degrees.size(); curr_pow *= point, ++i) {
-            curr_sum += degrees[i] * curr_pow;
+        T curr_sum = static_cast<T>(0);
+        for (const auto& [it, elem] : degrees) {
+            T curr_pow = static_cast<T>(1);
+            for (size_t j = 0; j < it; ++j) {
+                curr_pow *= point;
+            }
+            curr_sum += elem * curr_pow;
         }
         return curr_sum;
     }
 
-    typename std::vector<T>::const_iterator begin() const {
+    typename std::map<size_t, T>::const_iterator begin() const {
         return degrees.cbegin();
     }
 
-    typename std::vector<T>::const_iterator end() const {
+    typename std::map<size_t, T>::const_iterator end() const {
         return degrees.cend();
     }
 
@@ -151,9 +166,10 @@ public:
         if (p1.Degree() < p2.Degree()) {
             return Polynomial();
         } else {
-            Polynomial new_p(p1.degrees), left_over;
+            Polynomial new_p, left_over;
+            new_p.degrees = p1.degrees;
             int gap = new_p.Degree() - p2.Degree();
-            T max_deg_p2 = p2.degrees[p2.Degree()];
+            T max_deg_p2 = p2.degrees.at(p2.Degree());
             while (gap >= 0 && !new_p.degrees.empty()) {
                 T new_deg = new_p.degrees[new_p.Degree()] / max_deg_p2;
                 std::vector<T> tmp_v(gap + 1);
@@ -174,13 +190,15 @@ public:
     }
 
     friend Polynomial operator , (const Polynomial& p1, const Polynomial& p2) {
-        if (static_cast<int>(p1.Degree()) == -1 || p1 == p2) {
+        if (p1.Degree() == -1 || p1 == p2) {
             return p2;
-        } else if (static_cast<int>(p2.Degree()) == -1) {
+        } else if (p2.Degree() == -1) {
             return p1;
         } else {
-            Polynomial p1_c(p1.degrees), p2_c(p2.degrees), lag_d;
-            for (; !p2_c.degrees.empty(); ) {
+            Polynomial p1_c, p2_c, lag_d;
+            p1_c.degrees = p1.degrees;
+            p2_c.degrees = p2.degrees;
+            for (; p2_c.Degree() != -1; ) {
                 lag_d = p1_c % p2_c;
                 p1_c = p2_c;
                 p2_c = lag_d;
@@ -193,78 +211,78 @@ public:
 
     friend Polynomial operator & (const Polynomial& p1, const Polynomial& p2) {
         Polynomial new_p;
-        for (size_t i = 0; i < p1.degrees.size(); ++i) {
+        for (const auto& [it, elem] : p1) {
             Polynomial curr_p(1);
-            for (size_t j = 0; j < i; ++j) {
+            for (size_t j = 0; j < it; ++j) {
                 curr_p *= p2;
             }
-            curr_p *= p1.degrees[i];
+            curr_p *= p1.degrees.at(it);
             new_p += curr_p;
         }
         return new_p;
     }
 
     friend std::ostream& operator << (std::ostream& out, const Polynomial& p) {
-        if (p.degrees.size() == 0) {
+        if (p.Degree() == -1) {
             out << '0';
-        } else if (p.degrees.size() == 1) {
-            out << p.degrees[0];
-        } else if (p.degrees.size() != 0) {
-            for (int i = static_cast<int>(p.degrees.size()) - 1; i >= 0; --i) {
-                if (p.degrees[i] != static_cast<T>(0)) {
-                    if (i == static_cast<int>(p.degrees.size()) - 1) {
-                        if (p.degrees[i] == static_cast<T>(1)) {
-                            if (i == 1) {
+        } else if (p.Degree() == 0) {
+            out << p.degrees.at(0);
+        } else {
+            for (auto i = p.degrees.rbegin(); i != p.degrees.rend(); ++i) {
+                if (p.degrees.at((*i).first) != static_cast<T>(0)) {
+                    if (i == p.degrees.rbegin()) {
+                        if (p.degrees.at((*i).first) == static_cast<T>(1)) {
+                            if ((*i).first == 1) {
                                 out << "x";
                             } else {
-                                out << "x^" << i;
+                                out << "x^" << (*i).first;
                             }
-                        } else if (p.degrees[i] == static_cast<T>(-1)) {
-                            if (i == 1) {
+                        } else if (p.degrees.at((*i).first) == static_cast<T>(-1)) {
+                            if ((*i).first == 1) {
                                 out << "-x";
                             } else {
-                                out << "-x^" << i;
+                                out << "-x^" << (*i).first;
                             }
                         } else {
-                            if (i == 1) {
-                                out << p.degrees[i] << "*x";
+                            if ((*i).first == 1) {
+                                out << p.degrees.at((*i).first) << "*x";
                             } else {
-                                out << p.degrees[i] << "*x^" << i;
+                                out << p.degrees.at((*i).first) << "*x^" << (*i).first;
                             }
                         }
                     } else {
-                        if (p.degrees[i] == static_cast<T>(1)) {
-                            if (i == 1) {
+                        if (p.degrees.at((*i).first) == static_cast<T>(1)) {
+                            if ((*i).first == 1) {
                                 out << "+x";
-                            } else if (i != 0) {
-                                out << "+x^" << i;
+                            } else if ((*i).first != 0) {
+                                out << "+x^" << (*i).first;
                             } else {
                                 out << "+1";
                             }
-                        } else if (p.degrees[i] == static_cast<T>(-1)) {
-                            if (i == 1) {
+                        } else if (p.degrees.at((*i).first) == static_cast<T>(-1)) {
+                            if ((*i).first == 1) {
                                 out << "-x";
-                            } else if (i != 0) {
-                                out << "-x^" << i;
+                            } else if ((*i).first != 0) {
+                                out << "-x^" << (*i).first;
                             } else {
                                 out << "-1";
                             }
                         } else {
-                            if (p.degrees[i] < static_cast<T>(0)) {
-                                if (i == 1) {
-                                    out << p.degrees[i] << "*x";
-                                } else if (i != 0) {
-                                    out << p.degrees[i] << "*x^" << i;
+                            if (p.degrees.at((*i).first) < static_cast<T>(0)) {
+                                if ((*i).first == 1) {
+                                    out << p.degrees.at((*i).first) << "*x";
+                                } else if ((*i).first != 0) {
+                                    out << p.degrees.at((*i).first) << "*x^" << (*i).first;
                                 } else {
-                                    out << p.degrees[i];
+                                    out << p.degrees.at((*i).first);
                                 }
                             } else {
-                                if (i == 1) {
-                                    out << '+' << p.degrees[i] << "*x";
-                                } else if (i != 0) {
-                                    out << '+' << p.degrees[i] << "*x^" << i;
+                                if ((*i).first == 1) {
+                                    out << '+' << p.degrees.at((*i).first) << "*x";
+                                } else if ((*i).first != 0) {
+                                    out << '+' << p.degrees.at((*i).first) << "*x^" << (*i).first;
                                 } else {
-                                    out << '+' << p.degrees[i];
+                                    out << '+' << p.degrees.at((*i).first);
                                 }
                             }
                         }
