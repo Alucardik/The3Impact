@@ -3,33 +3,29 @@
 
 class Vector {
 private:
-    int *head = nullptr, *tail = nullptr;
+    int *head = nullptr;
     size_t vec_size = 0, reserved_size = 0;
 
 public:
     Vector() : reserved_size(2) {
         head = new int[reserved_size];
-        tail = &head[reserved_size - 1];
     }
 
     Vector(const Vector& v) : vec_size(v.vec_size), reserved_size(v.reserved_size) {
         head = new int[reserved_size];
-        for (int i = 0, *it = v.head; it != v.tail; ++i, ++it) {
-            head[i] = *it;
+        for (int i = 0; i != v.size(); ++i) {
+            head[i] = v.head[i];
         }
-        tail = &head[vec_size];
     }
 
     Vector& operator = (const Vector& v) {
-        tail = nullptr;
-        delete head;
+        delete []head;
         reserved_size = v.reserved_size;
         vec_size = v.vec_size;
         head = new int[reserved_size];
-        for (int i = 0, *it = v.head; it != v.tail; ++i, ++it) {
-            head[i] = *it;
+        for (int i = 0; i != v.size(); ++i) {
+            head[i] = v.head[i];
         }
-        tail = &head[vec_size];
         return *this;
     }
 
@@ -45,17 +41,15 @@ public:
             reserved_size *= 2;
             int *copy_head = head;
             head = new int[reserved_size];
-            for (int i = 0, *it = copy_head; it != tail; ++i, ++it) {
-                head[i] = *it;
+            for (int i = 0; i != size(); ++i) {
+                head[i] = copy_head[i];
             }
             head[vec_size - 1] = inp_num;
         }
-        tail = &head[vec_size];
     }
 
     void pop_back() {
         --vec_size;
-        tail = &head[vec_size];
     }
 
     int operator[] (size_t i) const {
@@ -67,7 +61,24 @@ public:
     }
 
     ~Vector() {
-        tail = nullptr;
-        delete head;
+        vec_size = 0;
+        reserved_size = 0;
+        delete []head;
     }
 };
+
+int main() {
+    Vector v;
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(3);
+    Vector v2;
+    v2 = v;
+    v.pop_back();
+    std::cout << sizeof(v2) << std::endl;
+    for (size_t i = 0; i < v2.size(); ++i) {
+        std::cout << v2[i] << std::endl;
+    }
+
+    return 0;
+}
